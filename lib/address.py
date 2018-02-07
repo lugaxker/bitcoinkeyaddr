@@ -345,4 +345,4 @@ class Cashaddr(object):
     @staticmethod
     def encode_full(prefix, kind, addr_hash):
         """Encode a full cashaddr address, with prefix and separator."""
-        return ':'.join([prefix, Cashaddr.encode(prefix, kind, addr_hash)])    
+        return ':'.join([prefix, Cashaddr.encode(prefix, kind, addr_hash)])
