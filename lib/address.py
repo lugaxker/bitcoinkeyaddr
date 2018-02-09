@@ -23,30 +23,35 @@
 
 import hashlib
 
+from .keys import *
+
 _sha256 = hashlib.sha256
 _new_hash = hashlib.new
 hex_to_bytes = bytes.fromhex
 
+class AddressError(Exception):
+    '''Exception used for Address errors.'''
+
 # Utility functions
 
-def to_bytes(x):
-    '''Convert to bytes which is hashable.'''
-    if isinstance(x, bytes):
-        return x
-    if isinstance(x, bytearray):
-        return bytes(x)
-    raise TypeError('{} is not bytes ({})'.format(x, type(x)))
+#def to_bytes(x):
+    #'''Convert to bytes which is hashable.'''
+    #if isinstance(x, bytes):
+        #return x
+    #if isinstance(x, bytearray):
+        #return bytes(x)
+    #raise TypeError('{} is not bytes ({})'.format(x, type(x)))
 
-def hash_to_hex_str(x):
-    '''Convert a big-endian binary hash to displayed hex string.
+#def hash_to_hex_str(x):
+    #'''Convert a big-endian binary hash to displayed hex string.
 
-    Display form of a binary hash is reversed and converted to hex.
-    '''
-    return bytes(reversed(x)).hex()
+    #Display form of a binary hash is reversed and converted to hex.
+    #'''
+    #return bytes(reversed(x)).hex()
 
-def hex_str_to_hash(x):
-    '''Convert a displayed hex string to a binary hash.'''
-    return bytes(reversed(hex_to_bytes(x)))
+#def hex_str_to_hash(x):
+    #'''Convert a displayed hex string to a binary hash.'''
+    #return bytes(reversed(hex_to_bytes(x)))
 
 def bytes_to_int(be_bytes):
     '''Interprets a big-endian sequence of bytes as an integer'''
@@ -309,7 +314,7 @@ class Cashaddr(object):
         if payload[-1] & ((1 << extrabits) - 1):
             raise ValueError('non-zero padding in address {}'.format(address))
 
-        decoded = _convertbits(payload, 5, 8, False)
+        decoded = Cashaddr._convertbits(payload, 5, 8, False)
         version = decoded[0]
         addr_hash = bytes(decoded[1:])
         size = (version & 0x03) * 4 + 20
@@ -346,3 +351,50 @@ class Cashaddr(object):
     def encode_full(prefix, kind, addr_hash):
         """Encode a full cashaddr address, with prefix and separator."""
         return ':'.join([prefix, Cashaddr.encode(prefix, kind, addr_hash)])
+    
+def legacy_to_cash( legacy_address ):
+    ''' Convert a legacy address into a cash address. '''
+    prefix = "bitcoincash"
+    vpayload = Base58.decode_check( legacy_address )
+    verbyte, addr_hash = vpayload[0], vpayload[1:]
+    if verbyte == 0:
+        kind = Cashaddr.PUBKEY_TYPE
+    elif verbyte == 5:
+        kind = Cashaddr.SCRIPT_TYPE
+    else:
+        raise AddressError("unknown version byte: {}".format(verbyte))
+    cash_address = Cashaddr.encode_full(prefix, kind, addr_hash)
+    return cash_address
+
+def cash_to_legacy( cash_address ):
+    ''' Convert a cash address into a legacy address. '''
+    _, kind, addr_hash = Cashaddr.decode( cash_address )
+    if kind == Cashaddr.PUBKEY_TYPE:
+        verbytehex = "00"
+    elif kind == Cashaddr.SCRIPT_TYPE:
+        verbytehex = "05"
+    else:
+        raise AddressError("unknown kind: {}".format(kind))
+    vpayload = bytes.fromhex( verbytehex + addr_hash.hex() )
+    legacy_address = Base58.encode_check(vpayload)
+    return legacy_address
+
+def prvkey_to_address( wifkey, addr_format ):
+    ''' Generate simple address from simple private key (WIF). 
+    Formats : CASHADDR = 0, LEGACY = 1.'''
+    k = Base58.decode_check( wifkey )
+    verbyte, prvkey_hash = k[0], k[1:]
+    eckey = EC_key( prvkey_hash )
+    K = point_to_ser( eckey.pubkey.point )
+    addr_hash = hash160(K)
+    assert len(addr_hash) == 20
+    
+    if addr_format == 0:
+        address = Cashaddr.encode_full("bitcoincash", Cashaddr.PUBKEY_TYPE, addr_hash)
+    elif addr_format == 1:
+        vpayload = bytes.fromhex( "00" + addr_hash.hex() )
+        address = Base58.encode_check(vpayload)
+    else:
+        raise AddressError("wrong format specification, must be 0 or 1")
+    
+    return address

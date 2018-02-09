@@ -1,12 +1,7 @@
 #!/usr/bin/python3.5
 # -*- coding: utf-8 -*-
 
-import hashlib
-import binascii
 import ecdsa
-
-# Génération aléatoire
-#random_seed = lambda n: "%032x"%ecdsa.util.randrange( pow(2,n) )  
 
 class EC_key(object):
     
