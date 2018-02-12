@@ -3,7 +3,7 @@
 
 import ecdsa
 
-class EC_key(object):
+class EllipticCurveKey:
     
     def __init__( self, k ):
         secret = ecdsa.util.string_to_number(k)

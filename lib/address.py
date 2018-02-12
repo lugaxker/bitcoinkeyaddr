@@ -1,3 +1,6 @@
+#!/usr/bin/python3.5
+# -*- coding: utf-8 -*-
+
 # From Electron Cash - lightweight Bitcoin client
 # Copyright (C) 2017 The Electron Cash Developers
 #
@@ -34,13 +37,13 @@ class AddressError(Exception):
 
 # Utility functions
 
-#def to_bytes(x):
-    #'''Convert to bytes which is hashable.'''
-    #if isinstance(x, bytes):
-        #return x
-    #if isinstance(x, bytearray):
-        #return bytes(x)
-    #raise TypeError('{} is not bytes ({})'.format(x, type(x)))
+def to_bytes(x):
+    '''Convert to bytes which is hashable.'''
+    if isinstance(x, bytes):
+        return x
+    if isinstance(x, bytearray):
+        return bytes(x)
+    raise TypeError('{} is not bytes ({})'.format(x, type(x)))
 
 #def hash_to_hex_str(x):
     #'''Convert a big-endian binary hash to displayed hex string.
@@ -163,7 +166,7 @@ class Base58(object):
     
 ###
 
-class Cashaddr(object):
+class CashAddr(object):
     
     _CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -198,8 +201,8 @@ class Cashaddr(object):
     @staticmethod
     def _create_checksum(prefix, data):
         """Compute the checksum values given prefix and data."""
-        values = Cashaddr._prefix_expand(prefix) + data + bytes(8)
-        polymod = Cashaddr._polymod(values)
+        values = CashAddr._prefix_expand(prefix) + data + bytes(8)
+        polymod = CashAddr._polymod(values)
         # Return the polymod expanded into eight 5-bit elements
         return bytes((polymod >> 5 * (7 - i)) & 31 for i in range(8))
 
@@ -243,7 +246,7 @@ class Cashaddr(object):
         version_byte |= encoded_size
 
         data = bytes([version_byte]) + addr_hash
-        return Cashaddr._convertbits(data, 8, 5, True)
+        return CashAddr._convertbits(data, 8, 5, True)
 
     @staticmethod
     def _decode_payload(addr):
@@ -273,12 +276,12 @@ class Cashaddr(object):
             raise ValueError('address payload has invalid length: {}'
                             .format(len(addr)))
         try:
-            data = bytes(Cashaddr._CHARSET.find(x) for x in payload)
+            data = bytes(CashAddr._CHARSET.find(x) for x in payload)
         except ValueError:
             raise ValueError('invalid characters in address: {}'
                                 .format(payload))
 
-        if Cashaddr._polymod(Cashaddr._prefix_expand(prefix) + data):
+        if CashAddr._polymod(CashAddr._prefix_expand(prefix) + data):
             raise ValueError('invalid checksum in address: {}'.format(addr))
 
         if lower != addr:
@@ -303,7 +306,7 @@ class Cashaddr(object):
         if not isinstance(address, str):
             raise TypeError('address must be a string')
 
-        prefix, payload = Cashaddr._decode_payload(address)
+        prefix, payload = CashAddr._decode_payload(address)
 
         # Ensure there isn't extra padding
         extrabits = len(payload) * 5 % 8
@@ -314,7 +317,7 @@ class Cashaddr(object):
         if payload[-1] & ((1 << extrabits) - 1):
             raise ValueError('non-zero padding in address {}'.format(address))
 
-        decoded = Cashaddr._convertbits(payload, 5, 8, False)
+        decoded = CashAddr._convertbits(payload, 5, 8, False)
         version = decoded[0]
         addr_hash = bytes(decoded[1:])
         size = (version & 0x03) * 4 + 20
@@ -326,7 +329,7 @@ class Cashaddr(object):
                             .format(len(addr_hash), size))
 
         kind = version >> 3
-        if kind not in (Cashaddr.SCRIPT_TYPE, Cashaddr.PUBKEY_TYPE):
+        if kind not in (CashAddr.SCRIPT_TYPE, CashAddr.PUBKEY_TYPE):
             raise ValueError('unrecognised address type {}'.format(kind))
 
         return prefix, kind, addr_hash
@@ -340,61 +343,131 @@ class Cashaddr(object):
         if not isinstance(addr_hash, (bytes, bytearray)):
             raise TypeError('addr_hash must be binary bytes')
 
-        if kind not in (Cashaddr.SCRIPT_TYPE, Cashaddr.PUBKEY_TYPE):
+        if kind not in (CashAddr.SCRIPT_TYPE, CashAddr.PUBKEY_TYPE):
             raise ValueError('unrecognised address type {}'.format(kind))
 
-        payload = Cashaddr._pack_addr_data(kind, addr_hash)
-        checksum = Cashaddr._create_checksum(prefix, payload)
-        return ''.join([Cashaddr._CHARSET[d] for d in (payload + checksum)])
+        payload = CashAddr._pack_addr_data(kind, addr_hash)
+        checksum = CashAddr._create_checksum(prefix, payload)
+        return ''.join([CashAddr._CHARSET[d] for d in (payload + checksum)])
 
     @staticmethod
     def encode_full(prefix, kind, addr_hash):
         """Encode a full cashaddr address, with prefix and separator."""
-        return ':'.join([prefix, Cashaddr.encode(prefix, kind, addr_hash)])
+        return ':'.join([prefix, CashAddr.encode(prefix, kind, addr_hash)])
+
+class Address:
+    ''' Address. '''
     
-def legacy_to_cash( legacy_address ):
-    ''' Convert a legacy address into a cash address. '''
-    prefix = "bitcoincash"
-    vpayload = Base58.decode_check( legacy_address )
-    verbyte, addr_hash = vpayload[0], vpayload[1:]
-    if verbyte == 0:
-        kind = Cashaddr.PUBKEY_TYPE
-    elif verbyte == 5:
-        kind = Cashaddr.SCRIPT_TYPE
-    else:
-        raise AddressError("unknown version byte: {}".format(verbyte))
-    cash_address = Cashaddr.encode_full(prefix, kind, addr_hash)
-    return cash_address
+    # Address kinds
+    ADDR_P2PKH = 0
+    ADDR_P2SH = 1
 
-def cash_to_legacy( cash_address ):
-    ''' Convert a cash address into a legacy address. '''
-    _, kind, addr_hash = Cashaddr.decode( cash_address )
-    if kind == Cashaddr.PUBKEY_TYPE:
-        verbytehex = "00"
-    elif kind == Cashaddr.SCRIPT_TYPE:
-        verbytehex = "05"
-    else:
-        raise AddressError("unknown kind: {}".format(kind))
-    vpayload = bytes.fromhex( verbytehex + addr_hash.hex() )
-    legacy_address = Base58.encode_check(vpayload)
-    return legacy_address
+    # Address formats
+    FMT_CASH = 0
+    FMT_LEGACY = 1
+    
+    CASHADDR_PREFIX = "bitcoincash"
+    
+    def __init__(self, hash160, kind):
+        ''' Initialisateur '''
+        assert kind in (self.ADDR_P2PKH, self.ADDR_P2SH)
+        self.kind = kind
+        hash160 = to_bytes(hash160)
+        assert len(hash160) == 20
+        self.hash160 = hash160
+        
+        
+    @classmethod
+    def from_cash_string(self, string):
+        '''Initialize from a cash address string.'''
+        prefix = self.CASHADDR_PREFIX
+        #if string.upper() == string:
+            #prefix = prefix.upper()
+        if not string.startswith(prefix + ':'):
+            string = ':'.join([prefix, string])
+        addr_prefix, kind, addr_hash = CashAddr.decode(string)
+        if addr_prefix != prefix:
+            raise AddressError('address has unexpected prefix {}'
+                               .format(addr_prefix))
+        return self(addr_hash, kind)
+    
+    @classmethod
+    def from_legacy_string(self, string):
+        '''Initialize from a legacy address string.'''
+        vpayload = Base58.decode_check( string )
+        verbyte, addr_hash = vpayload[0], vpayload[1:]
+        if verbyte == 0:
+            kind = self.ADDR_P2PKH
+        elif verbyte == 5:
+            kind = self.ADDR_P2SH
+        else:
+            raise AddressError("unknown version byte: {}".format(verbyte))
+        return self(addr_hash, kind)
+    
+    @classmethod
+    def from_string(self, string):
+        '''Construct from an address string.'''
+        if len(string) > 35:
+            return self.from_cash_string(string)
+        else:
+            return self.from_legacy_string(string)
+        
+    @classmethod
+    def from_pubkey(self, pubkey):
+        '''Returns a P2PKH address from a public key.  The public key can
+        be bytes or a hex string.'''
+        if isinstance(pubkey, str):
+            pubkey = bytes.fromhex(pubkey)
+        #PublicKey.validate(pubkey)
+        return self(hash160(pubkey), self.ADDR_P2PKH)
+    
+    @classmethod
+    def from_P2PKH_hash(self, hash160):
+        '''Initialize from a P2PKH hash160.'''
+        return self(hash160, self.ADDR_P2PKH)
+            
+    def to_cash(self):
+        return CashAddr.encode(self.CASHADDR_PREFIX, self.kind, self.hash160)
+    
+    def to_full_cash(self):
+        return CashAddr.encode_full(self.CASHADDR_PREFIX, self.kind, self.hash160)
+    
+    def to_legacy(self):
+        if self.kind == self.ADDR_P2PKH:
+            verbyte = 0
+        else:
+            verbyte = 5
+        return Base58.encode_check(bytes([verbyte]) + self.hash160)
+    
+    def to_string(self, fmt):
+        if fmt == self.FMT_CASH:
+            return self.to_cash()
+        elif fmt == self.FMT_LEGACY:
+            return self.to_legacy()
+        else:
+            raise AddressError('unrecognised format')
+        
+    def to_full_string(self, fmt):
+        if fmt == self.FMT_CASH:
+            return self.to_full_cash()
+        elif fmt == self.FMT_LEGACY:
+            return self.to_legacy()
+        else:
+            raise AddressError('unrecognised format')
+        
+    def __str__(self):
+        return self.to_full_string(self.FMT_CASH)
 
-def prvkey_to_address( wifkey, addr_format ):
+    def __repr__(self):
+        return '<Address {}>'.format(self.__str__())
+    
+def prvkey_to_address( wifkey ):
     ''' Generate simple address from simple private key (WIF). 
     Formats : CASHADDR = 0, LEGACY = 1.'''
     k = Base58.decode_check( wifkey )
     verbyte, prvkey_hash = k[0], k[1:]
-    eckey = EC_key( prvkey_hash )
+    eckey = EllipticCurveKey( prvkey_hash )
     K = point_to_ser( eckey.pubkey.point )
-    addr_hash = hash160(K)
-    assert len(addr_hash) == 20
-    
-    if addr_format == 0:
-        address = Cashaddr.encode_full("bitcoincash", Cashaddr.PUBKEY_TYPE, addr_hash)
-    elif addr_format == 1:
-        vpayload = bytes.fromhex( "00" + addr_hash.hex() )
-        address = Base58.encode_check(vpayload)
-    else:
-        raise AddressError("wrong format specification, must be 0 or 1")
+    address = Address.from_pubkey(K)
     
     return address

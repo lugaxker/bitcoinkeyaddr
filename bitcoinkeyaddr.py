@@ -5,7 +5,7 @@ import imp
 imp.load_module('bitcoinkeyaddr', *imp.find_module('lib'))
 
 from bitcoinkeyaddr.address import *
-from bitcoinkeyaddr.keys import EC_key, point_to_ser
+from bitcoinkeyaddr.keys import EllipticCurveKey, point_to_ser
 
 # 1. Convertir adresse legacy (str) en adresse cash (str)
 
@@ -13,16 +13,14 @@ print()
 print("1. Convertir une adresse legacy (str) en une adresse cash (str)")
 print()
 
-legacy_address = "15Fz48Z2R1gzcCwBxoKE7oqdJMiWavKFb9"
-cash_address = legacy_to_cash( legacy_address )
-print("Adresse legacy ", legacy_address)
-print("Adresse cash ", cash_address)
+address1 = Address.from_legacy_string( "15Fz48Z2R1gzcCwBxoKE7oqdJMiWavKFb9" )
+print("Adresse legacy ", address1.to_legacy())
+print("Adresse cash ", address1.to_full_cash())
 print()
 
-legacy_address = "3CWFddi6m4ndiGyKqzYvsFYagqDLPVMTzC"
-cash_address = legacy_to_cash( legacy_address )
-print("Adresse legacy ", legacy_address)
-print("Adresse cash ", cash_address)
+address2 = Address.from_legacy_string( "3CWFddi6m4ndiGyKqzYvsFYagqDLPVMTzC" )
+print("Adresse legacy ", address2.to_legacy())
+print("Adresse cash ", address2.to_full_cash())
 print()
 
 # 2. Convertir adresse cash (str) en adresse legacy (str)
@@ -30,16 +28,14 @@ print()
 print("2. Convertir une adresse cash (str) en une adresse legacy (str)")
 print()
 
-cash_address = "bitcoincash:qqhttulw2zdeklwgaujrruyxylad9nsdmsm4zcx8rj"
-legacy_address = cash_to_legacy( cash_address )
-print("Adresse cash ", cash_address)
-print("Adresse legacy ", legacy_address)
+address3 = Address.from_cash_string( "qqhttulw2zdeklwgaujrruyxylad9nsdmsm4zcx8rj" )
+print("Adresse cash ", address3.to_full_cash())
+print("Adresse legacy ", address3.to_legacy())
 print()
 
-cash_address = "bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq"
-legacy_address = cash_to_legacy( cash_address )
-print("Adresse cash ", cash_address)
-print("Adresse legacy ", legacy_address)
+address4 = Address.from_cash_string( "bitcoincash:ppm2qsznhks23z7629mms6s4cwef74vcwvn0h829pq" )
+print("Adresse cash ", address4.to_full_cash())
+print("Adresse legacy ", address4.to_legacy())
 print()
 
 # 3. Calculer une adresse à partir d'une clé privée
@@ -48,12 +44,11 @@ print("3. Calculer une adresse à partir d'une clé privée (WIF)")
 print()
 
 wifkey = "5JHpKWaBtKSe2vmRq1Jai622s18BLJcSCWXcXVKothR3eQY63wb"
-legacy_address = prvkey_to_address( wifkey, 1)
-cash_address = prvkey_to_address( wifkey, 0)
+address5 = prvkey_to_address( wifkey )
 
 print("Clé privée (WIF) ", wifkey)
-print("Adresse legacy ", legacy_address)
-print("Adresse cash ", cash_address)
+print("Adresse legacy", address5.to_legacy() )
+print("Adresse cash", address5.to_full_cash() )
 print()
 
 # 4. Génération d'une nouvelle clé privée
@@ -65,18 +60,12 @@ print()
 import ecdsa
 
 _n = ecdsa.ecdsa.generator_secp256k1.order()
-random_hexstr = "{:032x}".format( ecdsa.util.randrange( _n ) )
-k = bytes.fromhex( "80" + random_hexstr ) 
+random_hexstr = "{:032x}".format( ecdsa.util.randrange( _n ) ).zfill(64)
+k = bytes( [0x80] ) + bytes.fromhex( random_hexstr )
 random_wifkey = Base58.encode_check(k)
-random_key = EC_key( k[1:] )
-P = random_key.pubkey.point
-K = point_to_ser(P)
-payload = hash160(K)
-assert len(payload) == 20
-vpayload = bytes.fromhex( "00" + payload.hex() )
-random_address = Base58.encode_check(vpayload)
+random_address = prvkey_to_address( random_wifkey )
 
 print("Clé privée (WIF) ", random_wifkey)
-print("Adresse legacy", random_address)
-print("Adresse cash", legacy_to_cash( random_address ) )
+print("Adresse legacy", random_address.to_legacy() )
+print("Adresse cash", random_address.to_full_cash() )
 print()
