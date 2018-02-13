@@ -1,7 +1,7 @@
 bitcoinkeyaddr
 ==============
 
-Clés et adresses Bitcoin.
+Clés et adresses Bitcoin. Lancer `bitcoinkeyaddr.py`.
 
 À VENIR :
 
