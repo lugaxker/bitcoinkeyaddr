@@ -41,7 +41,7 @@ print("3. Calculer une adresse à partir d'une clé privée (WIF)")
 print()
 
 wifkey = "5JHpKWaBtKSe2vmRq1Jai622s18BLJcSCWXcXVKothR3eQY63wb"
-address5 = prvkey_to_address( wifkey )
+address5 = wifkey_to_address( wifkey )
 
 print("Clé privée (WIF) ", wifkey)
 print("Adresse legacy", address5.to_legacy() )
@@ -60,9 +60,21 @@ _n = ecdsa.ecdsa.generator_secp256k1.order()
 random_hexstr = "{:032x}".format( ecdsa.util.randrange( _n ) ).zfill(64)
 k = bytes( [0x80] ) + bytes.fromhex( random_hexstr )
 random_wifkey = Base58.encode_check(k)
-random_address = prvkey_to_address( random_wifkey )
+random_address = wifkey_to_address( random_wifkey )
 
 print("Clé privée (WIF) ", random_wifkey)
 print("Adresse legacy", random_address.to_legacy() )
 print("Adresse cash", random_address.to_full_cash() )
+print()
+
+# 5. Calculer une adresse à partir d'une clé privée compressée (WIF-compressed)
+print("5. Calculer une adresse à partir d'une clé privée compressée (WIF-compressed)")
+print()
+
+wifkey = "KyKDrhXV3WQATWK6atLbnM9ZDhYgcCjQDoL7oa21yBP8fuZ3PUPS"
+address6 = wifkey_to_address( wifkey )
+
+print("Clé privée (WIF) ", wifkey)
+print("Adresse legacy", address6.to_legacy() )
+print("Adresse cash", address6.to_full_cash() )
 print()

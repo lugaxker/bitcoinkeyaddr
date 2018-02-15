@@ -5,7 +5,7 @@ from PyQt5.QtCore import Qt
 from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
-from bitcoinkeyaddr.address import Address, prvkey_to_address
+from bitcoinkeyaddr.address import Address, wifkey_to_address
 from bitcoinkeyaddr.keys import EllipticCurveKey, point_to_ser
 
 class BitcoinkeyaddrWindow(QMainWindow):
@@ -14,8 +14,6 @@ class BitcoinkeyaddrWindow(QMainWindow):
         super().__init__()
         
         self.tabs = QTabWidget(self)
-        #self.keytoaddr_tab = self.keytoaddr_tab()
-        #self.converter_tab = self.create_converter_tab()
         
         self.tabs.addTab(self.create_keytoaddr_tab(), QIcon('icons/right_black_arrow.png'), "Clé privée vers adresse")
         self.tabs.addTab(self.create_converter_tab(), QIcon('icons/electron_converter.png'), "Convertisseur d'adresses")
@@ -25,7 +23,7 @@ class BitcoinkeyaddrWindow(QMainWindow):
         
         self.tabs.show()
         
-        self.setGeometry(100, 100, 580, 200)
+        self.setGeometry(100, 100, 600, 200)
         self.setWindowTitle('Clé et adresse Bitcoin')
         self.setWindowIcon(QIcon('icons/bitcoincash_logo.png'))
         
@@ -52,7 +50,7 @@ class BitcoinkeyaddrWindow(QMainWindow):
         
         def keytoaddr():
             try:
-                newaddr = prvkey_to_address( wifkeyEdit.text() )
+                newaddr = wifkey_to_address( wifkeyEdit.text().strip() )
             except:
                 newaddr = None
             if newaddr:
@@ -104,7 +102,7 @@ class BitcoinkeyaddrWindow(QMainWindow):
         
         def convert_legtocash():
             try:
-                addr = Address.from_legacy_string( legaddrEdit.text() )
+                addr = Address.from_legacy_string( legaddrEdit.text().strip() )
             except:
                 addr = None
             if addr:
@@ -112,7 +110,7 @@ class BitcoinkeyaddrWindow(QMainWindow):
         
         def convert_cashtoleg():
             try:
-                addr = Address.from_cash_string( cashaddrEdit.text() )
+                addr = Address.from_cash_string( cashaddrEdit.text().strip() )
             except:
                 addr = None
             if addr:
