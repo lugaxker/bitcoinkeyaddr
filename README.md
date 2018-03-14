@@ -1,7 +1,7 @@
 bitcoinkeyaddr
 ==============
 
-Clés et adresses Bitcoin. Lancer `bitcoinkeyaddr.py`.
+Clés et adresses Bitcoin (Cash). Lancer `bitcoinkeyaddr.py`.
 
 Prérequis
 ---------
@@ -15,4 +15,5 @@ Prérequis
 À venir
 -------
 
-- Hierarchical Deterministic Wallet (BIP-32) : génération des clés privées & adresses à partir d'une graine (typiquement une phrase de 12 mots)
+- Adresses SegWit (BTC)
+- Adresses P2SH

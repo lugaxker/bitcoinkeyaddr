@@ -291,13 +291,13 @@ class Address:
     
     CASHADDR_PREFIX = "bitcoincash"
     
-    def __init__(self, hash160, kind):
+    def __init__(self, hash_addr, kind):
         ''' Initialisateur '''
         assert kind in (self.ADDR_P2PKH, self.ADDR_P2SH)
         self.kind = kind
-        hash160 = to_bytes(hash160)
-        assert len(hash160) == 20
-        self.hash160 = hash160
+        hash_addr = to_bytes(hash_addr)
+        assert len(hash_addr) == 20
+        self.hash_addr = hash_addr
         
         
     @classmethod
@@ -345,22 +345,22 @@ class Address:
         return self(hash160(pubkey), self.ADDR_P2PKH)
     
     @classmethod
-    def from_P2PKH_hash(self, hash160):
-        '''Initialize from a P2PKH hash160.'''
-        return self(hash160, self.ADDR_P2PKH)
+    def from_P2PKH_hash(self, hash_addr):
+        '''Initialize from a P2PKH hash.'''
+        return self(hash_addr, self.ADDR_P2PKH)
             
     def to_cash(self):
-        return CashAddr.encode(self.CASHADDR_PREFIX, self.kind, self.hash160)
+        return CashAddr.encode(self.CASHADDR_PREFIX, self.kind, self.hash_addr)
     
     def to_full_cash(self):
-        return CashAddr.encode_full(self.CASHADDR_PREFIX, self.kind, self.hash160)
+        return CashAddr.encode_full(self.CASHADDR_PREFIX, self.kind, self.hash_addr)
     
     def to_legacy(self):
         if self.kind == self.ADDR_P2PKH:
             verbyte = 0
         else:
             verbyte = 5
-        return Base58.encode_check(bytes([verbyte]) + self.hash160)
+        return Base58.encode_check(bytes([verbyte]) + self.hash_addr)
     
     def to_string(self, fmt):
         if fmt == self.FMT_CASH:
