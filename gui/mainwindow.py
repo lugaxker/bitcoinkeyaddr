@@ -6,6 +6,7 @@ from PyQt5.QtGui import *
 from PyQt5.QtWidgets import *
 
 from bitcoinkeyaddr.address import Address, wifkey_to_address
+from bitcoinkeyaddr.keys import EllipticCurveKey, point_to_ser
 
 class BitcoinkeyaddrWindow(QMainWindow):
     
