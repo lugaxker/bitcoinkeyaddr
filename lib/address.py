@@ -1,95 +1,14 @@
-#!/usr/bin/python3.5
+#!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 
-# From Electron Cash - lightweight Bitcoin client
-# Copyright (C) 2017 The Electron Cash Developers
-#
-# Permission is hereby granted, free of charge, to any person
-# obtaining a copy of this software and associated documentation files
-# (the "Software"), to deal in the Software without restriction,
-# including without limitation the rights to use, copy, modify, merge,
-# publish, distribute, sublicense, and/or sell copies of the Software,
-# and to permit persons to whom the Software is furnished to do so,
-# subject to the following conditions:
-#
-# The above copyright notice and this permission notice shall be
-# included in all copies or substantial portions of the Software.
-#
-# THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND,
-# EXPRESS OR IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF
-# MERCHANTABILITY, FITNESS FOR A PARTICULAR PURPOSE AND
-# NONINFRINGEMENT. IN NO EVENT SHALL THE AUTHORS OR COPYRIGHT HOLDERS
-# BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER LIABILITY, WHETHER IN AN
-# ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM, OUT OF OR IN
-# CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
-# SOFTWARE.
-
-import hashlib
-
 from .base58 import *
-from .keys import *
-
-_sha256 = hashlib.sha256
-_new_hash = hashlib.new
-hex_to_bytes = bytes.fromhex
+from .crypto import EllipticCurveKey, hash160  
 
 class AddressError(Exception):
     '''Exception used for Address errors.'''
 
-# Utility functions
-
-def to_bytes(x):
-    '''Convert to bytes which is hashable.'''
-    if isinstance(x, bytes):
-        return x
-    if isinstance(x, bytearray):
-        return bytes(x)
-    raise TypeError('{} is not bytes ({})'.format(x, type(x)))
-
-#def hash_to_hex_str(x):
-    #'''Convert a big-endian binary hash to displayed hex string.
-
-    #Display form of a binary hash is reversed and converted to hex.
-    #'''
-    #return bytes(reversed(x)).hex()
-
-#def hex_str_to_hash(x):
-    #'''Convert a displayed hex string to a binary hash.'''
-    #return bytes(reversed(hex_to_bytes(x)))
-
-def bytes_to_int(be_bytes):
-    '''Interprets a big-endian sequence of bytes as an integer'''
-    return int.from_bytes(be_bytes, 'big')
-
-def int_to_bytes(value):
-    '''Converts an integer to a big-endian sequence of bytes'''
-    return value.to_bytes((value.bit_length() + 7) // 8, 'big')
-
-def sha256(x):
-    '''Simple wrapper of hashlib sha256.'''
-    return _sha256(x).digest()
-
-def double_sha256(x):
-    '''SHA-256 of SHA-256, as used extensively in bitcoin.'''
-    return sha256(sha256(x))
-
-def ripemd160(x):
-    '''Simple wrapper of hashlib ripemd160.'''
-    h = _new_hash('ripemd160')
-    h.update(x)
-    return h.digest()
-
-def hash160(x):
-    '''RIPEMD-160 of SHA-256.
-
-    Used to make bitcoin addresses from pubkeys.'''
-    return ripemd160(sha256(x))
-
-
-    
-###
-
-class CashAddr(object):
+class CashAddr:
+    # Copyright (C) 2017 The Electron Cash Developers
     
     _CHARSET = "qpzry9x8gf2tvdw0s3jn54khce6mua7l"
 
@@ -295,7 +214,6 @@ class Address:
         ''' Initialisateur '''
         assert kind in (self.ADDR_P2PKH, self.ADDR_P2SH)
         self.kind = kind
-        hash_addr = to_bytes(hash_addr)
         assert len(hash_addr) == 20
         self.hash_addr = hash_addr
         
@@ -387,9 +305,6 @@ class Address:
 def wifkey_to_address( wifkey ):
     ''' Generate simple address from simple private key (WIF). 
     Formats : CASHADDR = 0, LEGACY = 1.'''
-    k, compressed = deserialize_wifkey( wifkey )
-    eckey = EllipticCurveKey( k )
-    K = point_to_ser( eckey.pubkey.point, compressed )
-    address = Address.from_pubkey(K)
-    
+    eckey = EllipticCurveKey.from_wifkey( wifkey )
+    address = Address.from_pubkey( eckey.serialized_pubkey() )
     return address
